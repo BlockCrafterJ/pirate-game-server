@@ -14,11 +14,19 @@ class PlayerInstance:
         self.name = name
         self.money = 0
         self.bank = 0
+        self.skip_next = 0
+        self.money_set = 0
+        self.money_change = 0
+        self.set_money = False
 
     def request(self, command_type, headers, contents = {}):
         self.last_check_time = time.time()
         self.money = int(headers.get("Cash"))
-        self.bank = (headers.get("Bank"))
+        if self.set_money:
+            self.money = self.money_set
+            self.set_money = False
+        self.money += self.money_change
+        self.bank = int(headers.get("Bank"))
 
     def check_timeout(self):
         if time.time() - self.last_check_time >= TIMEOUT:

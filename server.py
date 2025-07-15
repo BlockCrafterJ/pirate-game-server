@@ -54,11 +54,13 @@ class Handler(BaseHTTPRequestHandler):
         ID = int(self.headers.get("ID"))
         if self.headers.get("Pirate-type") == "Player":
             if ID != -1:
-                print("Got request from player")
                 player = logic.players[logic.ids.index(ID)]
                 contents = urllib.parse.urlparse(self.path).query
                 contents = urllib.parse.parse_qs(contents)
                 player.request(self.headers.get("Command-type-pirate"), self.headers, contents)
+                self.send_header("Skip-next", str(player.skip_next))
+                player.skip_next = 0
+                self.send_header("Cash", str(player.money))
                 self.send_header("Command-type-pirate", "Set-cross-grid")
                 if self.headers.get("Player-action") != "-1":
                     action = int(self.headers.get("Player-action"))
@@ -72,11 +74,32 @@ class Handler(BaseHTTPRequestHandler):
                     print(player_names)
                     self.send_header("Player-name-list", json.dumps(player_names))
                     self.send_header("Player-ID-list", json.dumps(player_ids))
-                    '''match action:
-                        case action_types.ROB:
-                            self.send_header("")'''
-
-                self.send_header("Cash", str(player.money))
+                    player_id_to_action = int(self.headers.get("Player-id-to-action"))
+                    print(player_id_to_action, "ID TO ACTION")
+                    if player_id_to_action != -1:
+                        print("Carry out action")
+                        player_to_action = logic.players[logic.ids.index(player_id_to_action)]
+                        if action == action_types.ROB:
+                            print("Rob")
+                            player_to_action.set_money = True
+                            player.money += logic.players[player_id_to_action].money
+                            player_to_action.money_set = 0
+                        if action == action_types.KILL:
+                            print("k")
+                            player_to_action.set_money = True
+                            player_to_action.money_set = 0
+                        if action == action_types.WIPE_OUT:
+                            print("Skip")
+                            player_to_action.skip_next += 1
+                        if action == action_types.SWAP:
+                            print("sw")
+                            player_to_action.set_money = True
+                            temp = player.money
+                            player.money = player_to_action.money
+                            player_to_action.money_set = temp
+                        if action == action_types.PRESENT:
+                            print("present")
+                            player_to_action.money_change += 1000
                 current_content = json.dumps(logic.games[logic.game_ids.index(player.game_ID)].grid)
         if self.headers.get("Pirate-type") == "Host":
             if ID != -1:
