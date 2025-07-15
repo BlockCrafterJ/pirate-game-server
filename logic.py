@@ -3,6 +3,7 @@ import time
 import threading
 from typing import List
 import json
+import random
 
 
 class PlayerInstance:
@@ -11,9 +12,13 @@ class PlayerInstance:
         self.game_ID = game_ID
         self.last_check_time = time.time()
         self.name = name
+        self.money = 0
+        self.bank = 0
 
-    def request(self, command_type = "", contents = {}):
+    def request(self, command_type, headers, contents = {}):
         self.last_check_time = time.time()
+        self.money = int(headers.get("Cash"))
+        self.bank = (headers.get("Bank"))
 
     def check_timeout(self):
         if time.time() - self.last_check_time >= TIMEOUT:
@@ -26,17 +31,42 @@ class GameInstance:
         self.player_ids = []
         self.last_check_time = time.time()
         self.grid = []
+        for x in range(7):
+            self.grid.append([])
+            for y in range(7):
+                self.grid[x].append(0)
+        self.available_squares = []
+        for x in range(7):
+            for y in range(7):
+                self.available_squares.append([x,y])
         self.next_square_list = []
+        self.last_cross_place_time = time.time()
+        self.cross_place_time = 5
 
     def request(self, command_type = "", contents = {}):
         self.last_check_time = time.time()
-        self.grid = json.loads(contents.get("cross-grid")[0])
+        #self.grid = json.loads(contents.get("Cross-grid"))
 
     def check_timeout(self):
         if time.time() - self.last_check_time >= TIMEOUT:
             game_ids.remove(self.ID)
             available_game_ids.append(self.ID)
             games.remove(self)
+
+    def tick(self):
+        if time.time() - self.last_cross_place_time >= self.cross_place_time:
+            self.last_cross_place_time = time.time()
+            err = self.place_cross_at_random()
+
+    def place_cross_at_random(self):
+        if len(self.available_squares) > 0:
+            available_selection = random.randint(0, len(self.available_squares) - 1)
+            current_square = self.available_squares[available_selection]
+            self.grid[current_square[0]][current_square[1]] = 1
+            self.available_squares.pop(available_selection)
+            return 0
+        else:
+            return 1
 
 counter = 0
 content = ""
@@ -70,6 +100,7 @@ while True:
         player.check_timeout()
     for game in games:
         game.check_timeout()
+        game.tick()
     if threads <= len(players) + len(games):
         thread = threading.Thread(target=serve_thread)
         thread.start()

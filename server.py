@@ -4,8 +4,27 @@ from http.server import BaseHTTPRequestHandler
 import logic
 import urllib.parse
 import json
+from enum import Enum
 
 content = ""
+
+
+class action_types (Enum):
+    ROB = 0
+    KILL = 1
+    PRESENT = 2
+    WIPE_OUT = 3
+    SWAP = 4
+    CHOOSE_NEXT_SQUARE = 5
+    SHIELD = 6
+    MIRROR = 7
+    BOMB = 8
+    DOUBLE = 9
+    BANK = 10
+    M_5000 = 11
+    M_3000 = 12
+    M_1000 = 13
+    M_200 = 14
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -35,27 +54,41 @@ class Handler(BaseHTTPRequestHandler):
         ID = int(self.headers.get("ID"))
         if self.headers.get("Pirate-type") == "Player":
             if ID != -1:
+                print("Got request from player")
                 player = logic.players[logic.ids.index(ID)]
                 contents = urllib.parse.urlparse(self.path).query
                 contents = urllib.parse.parse_qs(contents)
-                player.request(self.headers.get("Command-type-pirate"), contents)
+                player.request(self.headers.get("Command-type-pirate"), self.headers, contents)
                 self.send_header("Command-type-pirate", "Set-cross-grid")
+                if self.headers.get("Player-action") != "-1":
+                    action = int(self.headers.get("Player-action"))
+                    print(action)
+                    player_names = []
+                    player_ids = []
+                    for loop_player in logic.players:
+                        if loop_player != player:
+                            player_names.append(loop_player.name)
+                            player_ids.append(loop_player.ID)
+                    print(player_names)
+                    self.send_header("Player-name-list", json.dumps(player_names))
+                    self.send_header("Player-ID-list", json.dumps(player_ids))
+                    '''match action:
+                        case action_types.ROB:
+                            self.send_header("")'''
+
+                self.send_header("Cash", str(player.money))
                 current_content = json.dumps(logic.games[logic.game_ids.index(player.game_ID)].grid)
-                print(type(current_content))
-            print(ID)
         if self.headers.get("Pirate-type") == "Host":
             if ID != -1:
                 game = logic.games[logic.game_ids.index(ID)]
                 contents = urllib.parse.urlparse(self.path).query
                 contents = urllib.parse.parse_qs(contents)
                 game.request(self.headers.get("Command-type-pirate"), contents)
-            print(ID)
+                self.send_header("Command-type-pirate", "Set-cross-grid")
+                current_content = json.dumps(game.grid)
         if self.headers.get("Pirate-type") == "ID-query":
             if ID in logic.game_ids:
                 self.send_header("ID-exists", "Yes")
-                print("ID EXISTS:", ID)
-            else:
-                print("ID DOES NOT EXIST")
         self.send_header("Content-length", str(len(current_content)))
         self.end_headers()
         self.wfile.write(current_content.encode("utf-8"))
