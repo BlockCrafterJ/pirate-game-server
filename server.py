@@ -34,7 +34,7 @@ class Handler(BaseHTTPRequestHandler):
         #    print(current_content)
         self.send_response(200, "OK")
         if self.headers.get("ID") == "-1" and self.headers.get("Pirate-type") == "Player":
-            self.send_header("Command-type-pirate", "New-ID")
+            self.send_header("Command-Type-Pirate", "New-ID")
             next_id = logic.next_id
             logic.next_id += 1
             current_content = str(next_id)
@@ -43,13 +43,13 @@ class Handler(BaseHTTPRequestHandler):
             player_name = self.headers.get("Name")
             logic.players.append(logic.PlayerInstance(next_id, game_id, player_name))
         elif self.headers.get("ID") == "-1" and self.headers.get("Pirate-type") == "Host":
-            self.send_header("Command-type-pirate", "New-ID")
+            self.send_header("Command-Type-Pirate", "New-ID")
             host_id = logic.available_game_ids[random.randint(0, len(logic.available_game_ids)-1)]
             logic.available_game_ids.remove(host_id)
             logic.game_ids.append(host_id)
             logic.games.append(logic.GameInstance(host_id))
             current_content = str(host_id)
-        self.send_header('Content-type', 'text/html')
+        self.send_header('Content-Type', 'text/html')
         self.send_header("Connection", "Keep-alive")
         ID = int(self.headers.get("ID"))
         if self.headers.get("Pirate-type") == "Player":
@@ -58,10 +58,10 @@ class Handler(BaseHTTPRequestHandler):
                 contents = urllib.parse.urlparse(self.path).query
                 contents = urllib.parse.parse_qs(contents)
                 player.request(self.headers.get("Command-type-pirate"), self.headers, contents)
-                self.send_header("Skip-next", str(player.skip_next))
+                self.send_header("Skip-Next", str(player.skip_next))
                 player.skip_next = 0
                 self.send_header("Cash", str(player.money))
-                self.send_header("Command-type-pirate", "Set-cross-grid")
+                self.send_header("Command-Type-Pirate", "Set-cross-grid")
                 if self.headers.get("Player-action") != "-1":
                     action = int(self.headers.get("Player-action"))
                     print(action)
@@ -72,8 +72,8 @@ class Handler(BaseHTTPRequestHandler):
                             player_names.append(loop_player.name)
                             player_ids.append(loop_player.ID)
                     print(player_names)
-                    self.send_header("Player-name-list", json.dumps(player_names))
-                    self.send_header("Player-ID-list", json.dumps(player_ids))
+                    self.send_header("Player-Name-List", json.dumps(player_names))
+                    self.send_header("Player-Id-List", json.dumps(player_ids))
                     player_id_to_action = int(self.headers.get("Player-id-to-action"))
                     print(player_id_to_action, "ID TO ACTION")
                     if player_id_to_action != -1:
@@ -107,12 +107,12 @@ class Handler(BaseHTTPRequestHandler):
                 contents = urllib.parse.urlparse(self.path).query
                 contents = urllib.parse.parse_qs(contents)
                 game.request(self.headers.get("Command-type-pirate"), contents)
-                self.send_header("Command-type-pirate", "Set-cross-grid")
+                self.send_header("Command-Type-Pirate", "Set-cross-grid")
                 current_content = json.dumps(game.grid)
         if self.headers.get("Pirate-type") == "ID-query":
             if ID in logic.game_ids:
-                self.send_header("ID-exists", "Yes")
-        self.send_header("Content-length", str(len(current_content)))
+                self.send_header("Id-Exists", "Yes")
+        self.send_header("Content-Length", str(len(current_content)))
         self.end_headers()
         self.wfile.write(current_content.encode("utf-8"))
 
