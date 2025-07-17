@@ -23,13 +23,16 @@ class PlayerInstance:
         self.last_check_time = time.time()
         self.money = int(headers.get("Cash"))
         if self.set_money:
+            print(self.set_money)
             self.money = self.money_set
             self.set_money = False
         self.money += self.money_change
+        self.money_change = 0
         self.bank = int(headers.get("Bank"))
 
     def check_timeout(self):
         if time.time() - self.last_check_time >= TIMEOUT:
+            print("timeout after " + str(time.time() - self.last_check_time))
             ids.remove(self.ID)
             players.remove(self)
 
