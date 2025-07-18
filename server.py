@@ -1,6 +1,5 @@
 import random
-import socketserver
-from http.server import BaseHTTPRequestHandler
+from http.server import BaseHTTPRequestHandler, HTTPServer
 import logic
 import urllib.parse
 import json
@@ -26,86 +25,97 @@ class action_types (Enum):
     M_1000 = 13
     M_200 = 14
 
+command = "OPTIONS"
+mname = 'do_' + command
+print(mname + "Unsupported method (%r)" % command)
 
 class Handler(BaseHTTPRequestHandler):
-    def do_GET(self):
-        current_content = content
-        #if self.path == "/":
-        #    print(current_content)
+    '''
+    def do_OPTIONS(self):
         self.send_response(200, "OK")
-        if self.headers.get("ID") == "-1" and self.headers.get("Pirate-type") == "Player":
-            self.send_header("Command-Type-Pirate", "New-ID")
-            next_id = logic.next_id
-            logic.next_id += 1
-            current_content = str(next_id)
-            logic.ids.append(next_id)
-            game_id = int(self.headers.get("Game-ID"))
-            player_name = self.headers.get("Name")
-            logic.players.append(logic.PlayerInstance(next_id, game_id, player_name))
-        elif self.headers.get("ID") == "-1" and self.headers.get("Pirate-type") == "Host":
-            self.send_header("Command-Type-Pirate", "New-ID")
-            host_id = logic.available_game_ids[random.randint(0, len(logic.available_game_ids)-1)]
-            logic.available_game_ids.remove(host_id)
-            logic.game_ids.append(host_id)
-            logic.games.append(logic.GameInstance(host_id))
-            current_content = str(host_id)
-        self.send_header('Content-Type', 'text/html')
-        self.send_header("Connection", "Keep-alive")
-        ID = int(self.headers.get("ID"))
-        if self.headers.get("Pirate-type") == "Player":
-            if ID != -1:
-                player = logic.players[logic.ids.index(ID)]
-                contents = urllib.parse.urlparse(self.path).query
-                contents = urllib.parse.parse_qs(contents)
-                self.send_header("Skip-Next", str(player.skip_next))
-                player.skip_next = 0
-                self.send_header("Command-Type-Pirate", "Set-cross-grid")
-                if self.headers.get("Player-action") != "-1":
-                    action = int(self.headers.get("Player-action"))
-                    player_names = []
-                    player_ids = []
-                    for loop_player in logic.players:
-                        if loop_player != player:
-                            player_names.append(loop_player.name)
-                            player_ids.append(loop_player.ID)
-                    print(player_names)
-                    self.send_header("Player-Name-List", json.dumps(player_names))
-                    self.send_header("Player-Id-List", json.dumps(player_ids))
-                    player_id_to_action = int(self.headers.get("Player-id-to-action"))
-                    if player_id_to_action != -1:
-                        player_to_action = logic.players[logic.ids.index(player_id_to_action)]
-                        if action == action_types.ROB.value:
-                            player_to_action.set_money = True
-                            player.money_change += logic.players[player_id_to_action].money
-                            player_to_action.money_set = 0
-                        if action == action_types.KILL.value:
-                            player_to_action.set_money = True
-                            player_to_action.money_set = 0
-                        if action == action_types.WIPE_OUT.value:
-                            player_to_action.skip_next += 1
-                        if action == action_types.SWAP.value:
-                            player.set_money = True
-                            player_to_action.set_money = True
-                            temp = player.money
-                            player.money_set = player_to_action.money
-                            player_to_action.money_set = temp
-                        if action == action_types.PRESENT.value:
-                            player_to_action.money_change += 1000
-                current_content = json.dumps(logic.games[logic.game_ids.index(player.game_ID)].grid)
-                player.request(self.headers.get("Command-type-pirate"), self.headers, contents)
-                self.send_header("Cash", str(player.money))
-        if self.headers.get("Pirate-type") == "Host":
-            if ID != -1:
-                game = logic.games[logic.game_ids.index(ID)]
-                contents = urllib.parse.urlparse(self.path).query
-                contents = urllib.parse.parse_qs(contents)
-                game.request(self.headers.get("Command-type-pirate"), contents)
-                self.send_header("Command-Type-Pirate", "Set-cross-grid")
-                current_content = json.dumps(game.grid)
-        if self.headers.get("Pirate-type") == "ID-query":
-            if ID in logic.game_ids:
-                self.send_header("Id-Exists", "Yes")
+        self.do_GET()
+        self.end_headers()'''
+    def do_GET(self):
+        current_content = "null"
+        if (self.headers.get("ID") != None):
+            #if self.path == "/":
+            #    print(current_content)
+            self.send_response(200, "OK")
+            if self.headers.get("ID") == "-1" and self.headers.get("Pirate-type") == "Player":
+                self.send_header("Command-Type-Pirate", "New-ID")
+                next_id = logic.next_id
+                logic.next_id += 1
+                current_content = str(next_id)
+                logic.ids.append(next_id)
+                game_id = int(self.headers.get("Game-ID"))
+                player_name = self.headers.get("Name")
+                logic.players.append(logic.PlayerInstance(next_id, game_id, player_name))
+            elif self.headers.get("ID") == "-1" and self.headers.get("Pirate-type") == "Host":
+                self.send_header("Command-Type-Pirate", "New-ID")
+                host_id = logic.available_game_ids[random.randint(0, len(logic.available_game_ids)-1)]
+                logic.available_game_ids.remove(host_id)
+                logic.game_ids.append(host_id)
+                logic.games.append(logic.GameInstance(host_id))
+                current_content = str(host_id)
+            self.send_header('Content-Type', 'text/html')
+            self.send_header("Connection", "Keep-alive")
+            ID = int(self.headers.get("ID"))
+            if self.headers.get("Pirate-type") == "Player":
+                if ID != -1:
+                    player = logic.players[logic.ids.index(ID)]
+                    contents = urllib.parse.urlparse(self.path).query
+                    contents = urllib.parse.parse_qs(contents)
+                    self.send_header("Skip-Next", str(player.skip_next))
+                    player.skip_next = 0
+                    self.send_header("Command-Type-Pirate", "Set-cross-grid")
+                    if self.headers.get("Player-action") != "-1":
+                        action = int(self.headers.get("Player-action"))
+                        player_names = []
+                        player_ids = []
+                        for loop_player in logic.players:
+                            if loop_player != player:
+                                player_names.append(loop_player.name)
+                                player_ids.append(loop_player.ID)
+                        print(player_names)
+                        self.send_header("Player-Name-List", json.dumps(player_names))
+                        self.send_header("Player-Id-List", json.dumps(player_ids))
+                        player_id_to_action = int(self.headers.get("Player-id-to-action"))
+                        if player_id_to_action != -1:
+                            player_to_action = logic.players[logic.ids.index(player_id_to_action)]
+                            if action == action_types.ROB.value:
+                                player_to_action.set_money = True
+                                player.money_change += logic.players[player_id_to_action].money
+                                player_to_action.money_set = 0
+                            if action == action_types.KILL.value:
+                                player_to_action.set_money = True
+                                player_to_action.money_set = 0
+                            if action == action_types.WIPE_OUT.value:
+                                player_to_action.skip_next += 1
+                            if action == action_types.SWAP.value:
+                                player.set_money = True
+                                player_to_action.set_money = True
+                                temp = player.money
+                                player.money_set = player_to_action.money
+                                player_to_action.money_set = temp
+                            if action == action_types.PRESENT.value:
+                                player_to_action.money_change += 1000
+                    current_content = json.dumps(logic.games[logic.game_ids.index(player.game_ID)].grid)
+                    player.request(self.headers.get("Command-type-pirate"), self.headers, contents)
+                    self.send_header("Cash", str(player.money))
+            if self.headers.get("Pirate-type") == "Host":
+                if ID != -1:
+                    game = logic.games[logic.game_ids.index(ID)]
+                    contents = urllib.parse.urlparse(self.path).query
+                    contents = urllib.parse.parse_qs(contents)
+                    game.request(self.headers.get("Command-type-pirate"), contents)
+                    self.send_header("Command-Type-Pirate", "Set-cross-grid")
+                    current_content = json.dumps(game.grid)
+            if self.headers.get("Pirate-type") == "ID-query":
+                if ID in logic.game_ids:
+                    self.send_header("Id-Exists", "Yes")
         self.send_header("Content-Length", str(len(current_content)))
+        #self.send_header("Access-Control-Allow-Origin",
+        #                 "https://*.veritatem.space")  # Needed to access server from online
         self.end_headers()
         self.wfile.write(current_content.encode("utf-8"))
 
@@ -117,7 +127,7 @@ def set_content(content_input):
 
 class Server:
     def __init__(self):
-        self.httpd = socketserver.TCPServer(("", 8080), Handler)
+        self.httpd = HTTPServer(("", 8080), Handler)
         self.client_number = 0
 
     def serve(self):
