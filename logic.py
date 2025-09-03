@@ -53,6 +53,7 @@ class GameInstance:
         self.next_square_list = []
         self.last_cross_place_time = time.time()
         self.cross_place_time = 5
+        self.ticking = False
 
     def request(self, command_type = "", contents = {}):
         self.last_check_time = time.time()
@@ -111,9 +112,11 @@ while True:
         player.check_timeout()
     for game in games:
         game.check_timeout()
-        game.tick()
+        if game.ticking:
+            game.tick()
     if threads <= len(players) + len(games):
         thread = threading.Thread(target=serve_thread)
         thread.start()
         threads += 1
+    time.sleep(0.1) # Leaves some cpu headroom
     #print(len(threads))
