@@ -51,6 +51,7 @@ class GameInstance:
             for y in range(7):
                 self.available_squares.append([x,y])
         self.next_square_list = []
+        self.next_square: list = [-1, -1]
         self.last_cross_place_time = time.time()
         self.cross_place_time = 5
         self.ticking = False
@@ -74,6 +75,11 @@ class GameInstance:
         if len(self.available_squares) > 0:
             available_selection = random.randint(0, len(self.available_squares) - 1)
             current_square = self.available_squares[available_selection]
+            print(self.next_square)
+            if self.next_square in self.available_squares:
+                current_square = self.next_square
+                available_selection = self.available_squares.index(current_square)
+                self.next_square = [-1,-1]
             self.grid[current_square[0]][current_square[1]] = 1
             self.available_squares.pop(available_selection)
             return 0

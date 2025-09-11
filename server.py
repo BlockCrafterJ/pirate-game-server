@@ -37,6 +37,7 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()'''
     def do_GET(self):
         current_content = "null"
+        self.send_header("pirate-timeout", str(logic.TIMEOUT))
         if self.headers.get("ID") != None:
             #if self.path == "/":
             #    print(current_content)
@@ -64,17 +65,20 @@ class Handler(BaseHTTPRequestHandler):
             if self.headers.get("Pirate-type") == "Player":
                 if ID != -1:
                     player = logic.players[logic.ids.index(ID)]
+                    game = logic.games[logic.game_ids.index(player.game_ID)]
                     contents = urllib.parse.urlparse(self.path).query
                     contents = urllib.parse.parse_qs(contents)
                     self.send_header("skip-next", str(player.skip_next))
                     player.skip_next = 0
                     self.send_header("command-type-pirate", "Set-cross-grid")
+                    self.send_header("started", str(game.ticking))
+                    self.send_header("turn-time", str(game.cross_place_time))
                     if self.headers.get("Player-action") != "-1":
                         action = int(self.headers.get("Player-action"))
                         player_names = []
                         player_ids = []
                         for loop_player in logic.players:
-                            if loop_player != player and loop_player.ID in logic.games[logic.game_ids.index(player.game_ID)].player_ids:
+                            if loop_player != player and loop_player.ID in game.player_ids:
                                 player_names.append(loop_player.name)
                                 player_ids.append(loop_player.ID)
                         self.send_header("player-name-list", json.dumps(player_names))
@@ -99,13 +103,20 @@ class Handler(BaseHTTPRequestHandler):
                                 player_to_action.money_set = temp
                             if action == action_types.PRESENT.value:
                                 player_to_action.money_change += 1000
-                    current_content = json.dumps(logic.games[logic.game_ids.index(player.game_ID)].grid)
+                        if json.loads(self.headers.get("Square-to-action"))["args"] != [-1,-1]:
+                            if action == action_types.CHOOSE_NEXT_SQUARE.value:
+                                game.next_square = json.loads(self.headers.get("Square-to-action"))["args"]
+                    current_content = json.dumps(game.grid)
                     player.request(self.headers.get("Command-type-pirate"), self.headers, contents)
                     self.send_header("cash", str(player.money))
             if self.headers.get("Pirate-type") == "Host":
                 if ID != -1:
                     game = logic.games[logic.game_ids.index(ID)]
-                    game.ticking = bool(self.headers.get("Started").capitalize())
+                    game.ticking = False
+                    if (self.headers.get("Started").capitalize()) == "True":
+                        game.ticking = True
+                    self.send_header("started", str(game.ticking))
+                    self.send_header("turn-time", str(game.cross_place_time))
                     contents = urllib.parse.urlparse(self.path).query
                     contents = urllib.parse.parse_qs(contents)
                     game.request(self.headers.get("Command-type-pirate"), contents)
